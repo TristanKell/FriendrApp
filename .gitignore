@@ -481,6 +481,6 @@ $RECYCLE.BIN/
 *.lnk
 
 # Vim temporary swap files
-*.swp
+*.swp 
 API/appsettings.json
 API/friends.db*
