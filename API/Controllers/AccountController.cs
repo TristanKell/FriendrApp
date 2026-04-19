@@ -4,16 +4,19 @@ using System.Text;
 using API.Data;
 using API.DTOs;
 using API.Entitites;
+using API.Interfaces;
+using API.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using API.Extensions;
 
 namespace API.Controllers;
 
-public class AccountController(AppDbContext context) : BaseApiController
+public class AccountController(AppDbContext context, ITokenService tokenService) : BaseApiController
 {
     [HttpPost("register")] // api/account/register
 
-    public async Task<ActionResult<AppUser>> Register(RegisterDTO registerDTO)
+    public async Task<ActionResult<UserDTO>> Register(RegisterDTO registerDTO)
     {
 
         if (await EmailExists(registerDTO.Email)) return BadRequest("email taken");
@@ -33,13 +36,13 @@ public class AccountController(AppDbContext context) : BaseApiController
         context.Users.Add(user);
         await context.SaveChangesAsync();
 
-        return user;
+        return user.ToDTO(tokenService);
     }
 
-    [HttpPost("login")]    
-    public async Task<ActionResult<AppUser>> Login(LoginDTO loginDTO)
+    [HttpPost("login")]
+    public async Task<ActionResult<UserDTO>> Login(LoginDTO loginDTO)
     {
-        var user = await context.Users.SingleOrDefaultAsync( x => x.Email == loginDTO.Email);
+        var user = await context.Users.SingleOrDefaultAsync(x => x.Email == loginDTO.Email);
 
         if (user == null) return Unauthorized("Invalid email adress");
 
@@ -52,7 +55,7 @@ public class AccountController(AppDbContext context) : BaseApiController
             if (computedHash[i] != user.PasswordHash[i]) return Unauthorized("invalid password");
         }
 
-        return user;
+        return user.ToDTO(tokenService);
     }
 
     private async Task<bool> EmailExists(string Email)
